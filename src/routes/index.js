@@ -1,14 +1,17 @@
 //VAI REDERIZAR COM BASE EM ESTAR LOGADO OU NÃO
 
-import React from "react";
+import { useContext } from "react";
 import { View, ActivityIndicator } from "react-native";
 
 import AuthRoutes from './auth.routes';
 import AppRoutes from './app.routes';
 
-function Routes() {
+import { AuthContext } from "../contexts/auth";
 
-    const signed = false;
+function Routes() {
+    
+    const { signed } = useContext(AuthContext);
+
     const loading = false;
 
     if (loading) {
