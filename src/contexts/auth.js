@@ -1,7 +1,9 @@
 //CONTEXTO RESPONSAVEL PELA AUTENTICAÇÃO
-import { useState, createContext } from "react";
+import { useState, createContext, useEffect } from "react";
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //Criando o contexto
 
@@ -11,8 +13,30 @@ export default function AuthProvider({ children }){
 
     //transformando em um controlador para o signed onde mais para frente será transformado em boolean por !!user
     const [ user, setUser ] = useState(null);
+    const [ loading, setLoading] = useState(true);
+    const [ loadingAuth, setLoadingAuth ] = useState(false);
+
+    useEffect(() => {
+
+        async function loadStorage(){
+            const storageUser = await AsyncStorage.getItem('@devapp');
+
+            if(storageUser){
+                //Convertendo de volta e adicionando dentro do usuário
+                setUser(JSON.parse(storageUser));
+                setLoading(false);
+            }
+
+            setLoading(false);
+        }
+
+        loadStorage();
+
+    }, [])
 
     async function signUp(email, password, name){
+        setLoadingAuth(true);
+
         await auth().createUserWithEmailAndPassword(email, password)
         .then(async (value) => {
             //Colocando os dados de value em uma variavel
@@ -30,14 +54,48 @@ export default function AuthProvider({ children }){
                 }
                 
                 setUser(data);
+                storageUser(data);
+                setLoadingAuth(false);
             })
         })
-        .catch( error => console.log(error));
+        .catch((error) => {
+            console.log(error);
+            setLoadingAuth(false);
+        });
+    }
+
+    async function signIn(email, password){
+        setLoadingAuth(true);
+        await auth().signInWithEmailAndPassword(email, password)
+        .then( async (value) => {
+            //Pegando as informações do user
+
+            let uid = value.user.uid;
+            const userProfile = await firestore().collection('users').doc(uid).get();
+
+            let data = {
+                uid: uid,
+                nome: userProfile.data().name,
+                email: value.user.email,
+            }
+
+            setUser(data);
+            storageUser(data);
+            setLoadingAuth(false);
+        })
+        .catch((error) => {
+            console.log(error);
+            setLoadingAuth(false);
+        });
+    }
+
+    async function storageUser(data){
+        await AsyncStorage.setItem('@devapp', JSON.stringify(data))
     }
 
     return( 
 
-        <AuthContext.Provider value={{ signed: !!user, signUp }}>
+        <AuthContext.Provider value={{ signed: !!user, signUp, signIn, loadingAuth, loading }}>
             {children}
         </AuthContext.Provider>
     )

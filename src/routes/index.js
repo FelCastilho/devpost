@@ -10,9 +10,7 @@ import { AuthContext } from "../contexts/auth";
 
 function Routes() {
     
-    const { signed } = useContext(AuthContext);
-
-    const loading = false;
+    const { signed, loading } = useContext(AuthContext);
 
     if (loading) {
         return (
