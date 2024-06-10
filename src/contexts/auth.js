@@ -89,13 +89,22 @@ export default function AuthProvider({ children }){
         });
     }
 
+    async function signOut(){
+        await auth().signOut();
+        await AsyncStorage.clear()
+        .then(() => {
+            //Deslogando o usuário
+            setUser(null);
+        })
+    }
+
     async function storageUser(data){
         await AsyncStorage.setItem('@devapp', JSON.stringify(data))
     }
 
     return( 
 
-        <AuthContext.Provider value={{ signed: !!user, signUp, signIn, loadingAuth, loading }}>
+        <AuthContext.Provider value={{ signed: !!user, signUp, signIn, signOut, loadingAuth, loading, user }}>
             {children}
         </AuthContext.Provider>
     )
